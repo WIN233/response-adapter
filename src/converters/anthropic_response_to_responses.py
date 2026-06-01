@@ -7,6 +7,8 @@ function call items.
 
 from __future__ import annotations
 
+import json
+
 from src.models.anthropic import AnthropicResponse
 from src.models.responses import (
     ResponsesResponse,
@@ -31,7 +33,6 @@ def anthropic_response_to_responses(ant_resp: AnthropicResponse) -> ResponsesRes
         if block.type == "text":
             text_parts.append(block.text)
         elif block.type == "tool_use":
-            import json
             output.append(
                 ResponseFunctionToolCall(
                     id=block.id,

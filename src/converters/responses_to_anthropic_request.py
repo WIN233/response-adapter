@@ -8,6 +8,7 @@ blocks. Also translates tool definitions and tool_choice settings.
 from __future__ import annotations
 
 import json
+import re
 
 from src.models.responses import (
     ResponsesRequest,
@@ -195,7 +196,6 @@ def _convert_easy_content_to_anthropic_blocks(
 
 def _accumulate_tool_call(text: str, acc: dict[str, str]) -> None:
     """Parse a ``<tool_call>`` XML fragment and accumulate for conversion."""
-    import re
     name_match = re.search(r'name="([^"]+)"', text)
     if name_match:
         acc["call_name"] = name_match.group(1)
