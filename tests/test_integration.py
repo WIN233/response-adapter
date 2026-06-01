@@ -28,7 +28,7 @@ def load_env() -> None:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
-                key, _, val = line.partition("=")
+            key, _, val = line.partition("=")
             os.environ.setdefault(key.strip(), val.strip())
 
 
@@ -223,46 +223,3 @@ class TestAnthropicIntegration:
             pass
 
 
-class TestAnthropicIntegration:
-    @skip_no_anthropic
-    def test_non_streaming(self):
-        tc = _build_app("anthropic")
-        resp = tc.post("/v1/responses", json={
-            "model": "claude-sonnet-4-20250514",
-            "input": "Say hello in one word",
-            "max_output_tokens": 50,
-        }, headers={"X-Target-Backend": "anthropic"})
-        assert resp.status_code == 200, resp.text
-        data = resp.json()
-        assert data.get("object") == "response"
-        output = data.get("output", [])
-        assert len(output) > 0
-        usage = data.get("usage", {})
-        assert usage.get("total_tokens", 0) > 0
-
-    @skip_no_anthropic
-    def test_streaming(self):
-        tc = _build_app("anthropic")
-        texts = []
-        completed = False
-        with tc.stream("POST", "/v1/responses", json={
-            "model": "claude-sonnet-4-20250514",
-            "input": "Count 1 2 3",
-            "max_output_tokens": 50,
-            "stream": True,
-        }, headers={"X-Target-Backend": "anthropic"}) as r:
-            assert r.status_code == 200
-            for line in r.iter_lines():
-                if not line:
-                    continue
-                if line.startswith("data: ") and line != "data: [DONE]":
-                    try:
-                        d = json.loads(line[6:])
-                        if d.get("type") == "response.output_text.delta":
-                            texts.append(d["delta"])
-                        elif d.get("type") in ("response.completed", "response.incomplete"):
-                            completed = True
-                    except Exception:
-                        pass
-        assert len(texts) > 0, "No text deltas received"
-        assert completed, "response.completed event not received"
