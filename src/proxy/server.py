@@ -33,6 +33,13 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="response-adapter")
 
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"message": str(exc), "type": type(exc).__name__}},
+        )
+
     webui_html = _build_webui()
 
     @app.get("/")
@@ -233,6 +240,8 @@ async def _stream_anthropic_to_responses(
         "item": {"id": msg_id, "type": "message", "role": "assistant", "content": []},
     })
 
+    last_usage: dict = {}
+
     async for chunk in client.stream_message(payload):
         ctype = chunk.get("type")
 
@@ -268,6 +277,11 @@ async def _stream_anthropic_to_responses(
                     "item": {"id": tc_id, "type": "function_call", "name": block.get("name", ""), "arguments": ""},
                 })
 
+        elif ctype == "message_delta":
+            usage = chunk.get("usage", {})
+            if usage:
+                last_usage = usage
+
     yield _sse_event("response.output_item.done", {
         "output_index": 0,
         "item": {"id": msg_id, "type": "message", "role": "assistant", "content": [{"type": "text", "text": current_text}]},
@@ -282,7 +296,11 @@ async def _stream_anthropic_to_responses(
                 {"id": msg_id, "type": "message", "role": "assistant", "content": [{"type": "text", "text": current_text}]},
                 *[{"id": tc["id"], "type": "function_call", "name": tc["name"], "arguments": tc["arguments"]} for tc in current_tool_calls],
             ],
-            "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
+            "usage": {
+                "input_tokens": last_usage.get("input_tokens", 0),
+                "output_tokens": last_usage.get("output_tokens", 0),
+                "total_tokens": last_usage.get("input_tokens", 0) + last_usage.get("output_tokens", 0),
+            },
         }
     })
 
