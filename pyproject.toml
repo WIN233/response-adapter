@@ -1,0 +1,16 @@
+[project]
+name = "response-adapter"
+version = "0.1.0"
+description = "Proxy server converting Chat/Anthropic API formats to OpenAI Responses API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+response-adapter = "main:main"

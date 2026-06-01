@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+
+# Virtual environments
+.venv
+
+# Environment configuration (contains real API keys)
+.env
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
